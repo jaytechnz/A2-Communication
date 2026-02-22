@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TCP/IP Model – Card Sort Activity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,600;0,700;1,300&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Root tokens ───────────────────────────────────── */
+    :root {
+      --brand:        #5b000b;
+      --brand-mid:    #8a0012;
+      --brand-light:  #f9edef;
+      --brand-xlight: #fdf5f6;
+      --white:        #ffffff;
+      --ink:          #1a1a1a;
+      --muted:        #6b6b6b;
+      --border:       #d4c0c2;
+      --success:      #1a7a4a;
+      --success-bg:   #e8f7ef;
+
+      --app-bg:    #fff3e6;
+      --trans-bg:  #f0f7ee;
+      --inet-bg:   #e8f0fb;
+      --link-bg:   #f9f0f9;
+
+      --app-accent:   #b85c00;
+      --trans-accent: #2d6a2d;
+      --inet-accent:  #1a4f96;
+      --link-accent:  #6a2d7a;
+
+      --radius: 14px;
+      --card-radius: 8px;
+      --shadow: 0 2px 12px rgba(91,0,11,0.10);
+    }
+
+    /* ── Reset & base ──────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Source Serif 4', Georgia, serif;
+      background: #ffffff;
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── Header ────────────────────────────────────────── */
+    header {
+      background: var(--brand);
+      color: #fff;
+      padding: 28px 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    header h1 span {
+      font-weight: 300;
+      font-style: italic;
+      opacity: 0.85;
+    }
+    .subtitle {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.75;
+    }
+
+    /* ── Instructions strip ────────────────────────────── */
+    .instructions {
+      background: var(--brand-light);
+      border-left: 4px solid var(--brand);
+      margin: 24px 32px 0;
+      border-radius: 0 var(--card-radius) var(--card-radius) 0;
+      padding: 14px 18px;
+      font-size: 0.88rem;
+      color: var(--brand);
+      line-height: 1.55;
+    }
+    .instructions strong { font-weight: 700; }
+
+    /* ── Reset button ──────────────────────────────────── */
+    .toolbar {
+      display: flex;
+      justify-content: flex-end;
+      padding: 16px 32px 0;
+      gap: 10px;
+    }
+    .btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 8px 18px;
+      border: 2px solid var(--brand);
+      transition: background 0.18s, color 0.18s;
+    }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-primary:hover { background: var(--brand-mid); border-color: var(--brand-mid); }
+    .btn-outline { background: transparent; color: var(--brand); }
+    .btn-outline:hover { background: var(--brand-light); }
+
+    /* ── Card bank ─────────────────────────────────────── */
+    .bank-wrapper {
+      margin: 20px 32px 0;
+    }
+    .bank-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .bank {
+      min-height: 70px;
+      background: #f8f8f8;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 14px 14px 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .bank.drag-over {
+      border-color: var(--brand);
+      background: var(--brand-xlight);
+    }
+
+    /* ── Draggable cards ───────────────────────────────── */
+    .card {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: #fff;
+      border: 2px solid var(--brand);
+      border-radius: var(--card-radius);
+      padding: 7px 13px;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      box-shadow: 0 1px 4px rgba(91,0,11,0.10);
+      white-space: nowrap;
+      position: relative;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(91,0,11,0.18);
+    }
+    .card.dragging {
+      opacity: 0.4;
+      cursor: grabbing;
+    }
+    .card[data-type="protocol"]     { border-color: var(--app-accent);   color: var(--app-accent);   background: #fff3e6; }
+    .card[data-type="dataunit"]     { border-color: var(--trans-accent);  color: var(--trans-accent); background: #f0f7ee; }
+    .card[data-type="description"]  { border-color: var(--inet-accent);   color: var(--inet-accent);  background: #e8f0fb; }
+    .card[data-type="address"]      { border-color: var(--link-accent);   color: var(--link-accent);  background: #f9f0f9; }
+    .card[data-type="layer"]        { border-color: var(--brand);         color: var(--brand);        background: var(--brand-xlight); }
+
+    /* ── Layer boxes ───────────────────────────────────── */
+    .layers-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 22px 32px 40px;
+    }
+
+    .layer-box {
+      border: 2.5px solid var(--brand);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .layer-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 20px;
+      border-bottom: 2px solid var(--brand);
+    }
+    .layer-number {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 600;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      letter-spacing: 0;
+    }
+    .layer-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .layer-hint {
+      margin-left: auto;
+      font-size: 0.72rem;
+      font-family: 'IBM Plex Mono', monospace;
+      opacity: 0.6;
+      font-style: italic;
+    }
+
+    /* Per-layer colour themes */
+    .layer-box[data-layer="application"] .layer-header { background: var(--app-bg); }
+    .layer-box[data-layer="application"] .layer-number { background: var(--app-accent); color: #fff; }
+    .layer-box[data-layer="application"] .layer-name   { color: var(--app-accent); }
+
+    .layer-box[data-layer="transport"] .layer-header { background: var(--trans-bg); }
+    .layer-box[data-layer="transport"] .layer-number { background: var(--trans-accent); color: #fff; }
+    .layer-box[data-layer="transport"] .layer-name   { color: var(--trans-accent); }
+
+    .layer-box[data-layer="internet"] .layer-header { background: var(--inet-bg); }
+    .layer-box[data-layer="internet"] .layer-number { background: var(--inet-accent); color: #fff; }
+    .layer-box[data-layer="internet"] .layer-name   { color: var(--inet-accent); }
+
+    .layer-box[data-layer="link"] .layer-header { background: var(--link-bg); }
+    .layer-box[data-layer="link"] .layer-number { background: var(--link-accent); color: #fff; }
+    .layer-box[data-layer="link"] .layer-name   { color: var(--link-accent); }
+
+    .layer-drop {
+      min-height: 72px;
+      padding: 12px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: flex-start;
+      align-content: flex-start;
+      transition: background 0.18s;
+    }
+    .layer-drop.drag-over {
+      background: var(--brand-xlight);
+      outline: 2px dashed var(--brand);
+      outline-offset: -4px;
+      border-radius: 0 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px);
+    }
+    .empty-hint {
+      font-size: 0.74rem;
+      color: #bbb;
+      font-style: italic;
+      align-self: center;
+      pointer-events: none;
+      font-family: 'Source Serif 4', serif;
+    }
+
+    /* ── Legend ────────────────────────────────────────── */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 0 32px 10px;
+      margin-top: 4px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      border: 1.5px solid;
+    }
+
+    /* ── Check answers panel ───────────────────────────── */
+    #feedback-panel {
+      margin: 0 32px 32px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: none;
+    }
+    #feedback-panel.visible { display: block; }
+    .feedback-header {
+      background: var(--brand);
+      color: #fff;
+      padding: 12px 20px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .feedback-body {
+      background: #fff;
+      border: 2px solid var(--brand);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 16px 20px;
+      font-size: 0.84rem;
+      line-height: 1.65;
+    }
+    .correct   { color: var(--success); font-weight: 600; }
+    .incorrect { color: #c0392b;        font-weight: 600; }
+
+    /* ── Score badge ───────────────────────────────────── */
+    .score-badge {
+      display: inline-block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+      background: var(--brand);
+      color: #fff;
+      border-radius: 8px;
+      padding: 4px 16px;
+      margin-bottom: 12px;
+    }
+
+    /* ── Touch drag ghost ──────────────────────────────── */
+    #drag-ghost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.85;
+      transform: rotate(3deg) scale(1.05);
+      display: none;
+    }
+
+    @media (max-width: 600px) {
+      header, .instructions, .toolbar, .bank-wrapper, .layers-wrapper, .legend, #feedback-panel {
+        margin-left: 14px;
+        margin-right: 14px;
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+      header { padding: 20px 14px 16px; }
+      .instructions { margin: 16px 14px 0; }
+      .toolbar { padding: 12px 14px 0; }
+      .legend { padding: 0 14px 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <p class="subtitle">Cambridge A2 · Computer Science · Networking</p>
+  <h1>TCP/IP Model <span>Card Sort</span></h1>
+</header>
+
+<div class="instructions">
+  <strong>Task:</strong> Drag each card from the bank below into the correct TCP/IP layer box.
+  Cards represent protocol names, data unit names, layer names, addresses, and layer responsibilities.
+  When you're done, press <strong>Check Answers</strong> to see how you did.
+  Reload the page to reshuffle the cards for a fresh attempt.
+</div>
+
+<div class="toolbar">
+  <button class="btn btn-outline" onclick="resetCards()">↺ Reset</button>
+  <button class="btn btn-primary" onclick="checkAnswers()">Check Answers ✓</button>
+</div>
+
+<div class="legend">
+  <div class="legend-item">
+    <span class="legend-swatch" style="background:#fff3e6;border-color:var(--app-accent)"></span>
+    Protocol
+  </div>
+  <div class="legend-item">
+    <span class="legend-swatch" style="background:#f0f7ee;border-color:var(--trans-accent)"></span>
+    Data unit
+  </div>
+  <div class="legend-item">
+    <span class="legend-swatch" style="background:#e8f0fb;border-color:var(--inet-accent)"></span>
+    Responsibility
+  </div>
+  <div class="legend-item">
+    <span class="legend-swatch" style="background:#f9f0f9;border-color:var(--link-accent)"></span>
+    Address type
+  </div>
+  <div class="legend-item">
+    <span class="legend-swatch" style="background:var(--brand-xlight);border-color:var(--brand)"></span>
+    Layer name
+  </div>
+</div>
+
+<div class="bank-wrapper">
+  <p class="bank-label">Card Bank — drag cards to the layers below</p>
+  <div class="bank" id="bank" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'bank')" ondragleave="handleDragLeave(event)">
+  </div>
+</div>
+
+<div class="layers-wrapper">
+
+  <div class="layer-box" data-layer="application">
+    <div class="layer-header">
+      <span class="layer-number">4</span>
+      <span class="layer-name">Application</span>
+      <span class="layer-hint">closest to the user</span>
+    </div>
+    <div class="layer-drop" id="drop-application"
+         ondragover="handleDragOver(event)"
+         ondrop="handleDrop(event, 'application')"
+         ondragleave="handleDragLeave(event)">
+      <span class="empty-hint">Drop cards here…</span>
+    </div>
+  </div>
+
+  <div class="layer-box" data-layer="transport">
+    <div class="layer-header">
+      <span class="layer-number">3</span>
+      <span class="layer-name">Transport</span>
+      <span class="layer-hint">end-to-end communication</span>
+    </div>
+    <div class="layer-drop" id="drop-transport"
+         ondragover="handleDragOver(event)"
+         ondrop="handleDrop(event, 'transport')"
+         ondragleave="handleDragLeave(event)">
+      <span class="empty-hint">Drop cards here…</span>
+    </div>
+  </div>
+
+  <div class="layer-box" data-layer="internet">
+    <div class="layer-header">
+      <span class="layer-number">2</span>
+      <span class="layer-name">Internet</span>
+      <span class="layer-hint">logical addressing &amp; routing</span>
+    </div>
+    <div class="layer-drop" id="drop-internet"
+         ondragover="handleDragOver(event)"
+         ondrop="handleDrop(event, 'internet')"
+         ondragleave="handleDragLeave(event)">
+      <span class="empty-hint">Drop cards here…</span>
+    </div>
+  </div>
+
+  <div class="layer-box" data-layer="link">
+    <div class="layer-header">
+      <span class="layer-number">1</span>
+      <span class="layer-name">Link</span>
+      <span class="layer-hint">network access / hardware</span>
+    </div>
+    <div class="layer-drop" id="drop-link"
+         ondragover="handleDragOver(event)"
+         ondrop="handleDrop(event, 'link')"
+         ondragleave="handleDragLeave(event)">
+      <span class="empty-hint">Drop cards here…</span>
+    </div>
+  </div>
+
+</div>
+
+<div id="feedback-panel">
+  <div class="feedback-header">Results</div>
+  <div class="feedback-body" id="feedback-body"></div>
+</div>
+
+<!-- Touch drag ghost element -->
+<div id="drag-ghost"></div>
+
+<script>
+  /* ── Card definitions ───────────────────────────────────────────── */
+  // type: protocol | dataunit | description | address | layer
+  const ALL_CARDS = [
+    // Application layer
+    { id: "http",     text: "HTTP",                                   type: "protocol",    answer: "application" },
+    { id: "https",    text: "HTTPS",                                  type: "protocol",    answer: "application" },
+    { id: "ftp",      text: "FTP",                                    type: "protocol",    answer: "application" },
+    { id: "smtp",     text: "SMTP",                                   type: "protocol",    answer: "application" },
+    { id: "pop3",     text: "POP3",                                   type: "protocol",    answer: "application" },
+    { id: "imap",     text: "IMAP",                                   type: "protocol",    answer: "application" },
+    { id: "appdesc",  text: "Provides services to applications",      type: "description", answer: "application" },
+    { id: "message",  text: "Message / Data",                         type: "dataunit",    answer: "application" },
+    // Transport layer
+    { id: "tcp",      text: "TCP",                                    type: "protocol",    answer: "transport" },
+    { id: "segment",  text: "Segment",                                type: "dataunit",    answer: "transport" },
+    { id: "chunks",   text: "Breaks data into numbered chunks",       type: "description", answer: "transport" },
+    { id: "reliable", text: "Ensures reliable delivery",              type: "description", answer: "transport" },
+    { id: "ports",    text: "Uses port numbers",                      type: "description", answer: "transport" },
+    // Internet layer
+    { id: "ip",       text: "IP",                                     type: "protocol",    answer: "internet" },
+    { id: "packet",   text: "Packet",                                 type: "dataunit",    answer: "internet" },
+    { id: "ipaddr",   text: "Adds IP addresses",                      type: "description", answer: "internet" },
+    { id: "routing",  text: "Routes data between networks",           type: "description", answer: "internet" },
+    { id: "ipaddress",text: "IP address",                             type: "address",     answer: "internet" },
+    // Link layer
+    { id: "ethernet", text: "Ethernet",                               type: "protocol",    answer: "link" },
+    { id: "wifi",     text: "Wi-Fi (802.11)",                         type: "protocol",    answer: "link" },
+    { id: "frame",    text: "Frame",                                  type: "dataunit",    answer: "link" },
+    { id: "physical", text: "Physical transmission over the medium",  type: "description", answer: "link" },
+    { id: "macaddr",  text: "MAC address",                            type: "address",     answer: "link" },
+    { id: "hardaddr", text: "Handles hardware addressing",            type: "description", answer: "link" },
+  ];
+
+  /* ── State ──────────────────────────────────────────────────────── */
+  let draggedId = null;   // currently dragged card id
+  let placements = {};    // cardId → zone ('bank' | 'application' | 'transport' | 'internet' | 'link')
+
+  /* ── Shuffle helper ─────────────────────────────────────────────── */
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /* ── Build & render all cards ───────────────────────────────────── */
+  function buildCard(card) {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.id = 'card-' + card.id;
+    el.dataset.cardId = card.id;
+    el.dataset.type = card.type;
+    el.textContent = card.text;
+    el.draggable = true;
+    el.addEventListener('dragstart', onDragStart);
+    el.addEventListener('dragend',   onDragEnd);
+    // Touch support
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    el.addEventListener('touchend',   onTouchEnd);
+    return el;
+  }
+
+  function renderAll() {
+    const bank = document.getElementById('bank');
+    ['bank','application','transport','internet','link'].forEach(zone => {
+      const zoneEl = zone === 'bank'
+        ? document.getElementById('bank')
+        : document.getElementById('drop-' + zone);
+      // remove all cards
+      zoneEl.querySelectorAll('.card').forEach(c => c.remove());
+    });
+    // Render each card in its placement
+    ALL_CARDS.forEach(card => {
+      const zone = placements[card.id] || 'bank';
+      const zoneEl = zone === 'bank'
+        ? document.getElementById('bank')
+        : document.getElementById('drop-' + zone);
+      zoneEl.appendChild(buildCard(card));
+    });
+    updateEmptyHints();
+  }
+
+  function updateEmptyHints() {
+    ['application','transport','internet','link'].forEach(layer => {
+      const drop = document.getElementById('drop-' + layer);
+      const hint = drop.querySelector('.empty-hint');
+      const cards = drop.querySelectorAll('.card');
+      if (hint) hint.style.display = cards.length ? 'none' : 'block';
+    });
+  }
+
+  /* ── Drag (desktop) ─────────────────────────────────────────────── */
+  function onDragStart(e) {
+    draggedId = e.currentTarget.dataset.cardId;
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', draggedId);
+  }
+  function onDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+    draggedId = null;
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+  }
+  function handleDragLeave(e) {
+    // Only remove if leaving the zone itself, not just entering a child
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+  }
+  function handleDrop(e, zone) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('drag-over');
+    const id = e.dataTransfer.getData('text/plain') || draggedId;
+    if (!id) return;
+    placements[id] = zone;
+    renderAll();
+    hideFeedback();
+  }
+
+  /* ── Touch drag ─────────────────────────────────────────────────── */
+  let touchCard = null;
+  let ghost = null;
+
+  function onTouchStart(e) {
+    const card = e.currentTarget;
+    touchCard = card;
+    const rect = card.getBoundingClientRect();
+    const t = e.touches[0];
+
+    ghost = document.getElementById('drag-ghost');
+    ghost.textContent = card.textContent;
+    ghost.className = 'card ' + card.className.replace('card','').trim();
+    ghost.dataset.type = card.dataset.type;
+    ghost.style.display = 'block';
+    ghost.style.left = (t.clientX - rect.width / 2) + 'px';
+    ghost.style.top  = (t.clientY - rect.height / 2) + 'px';
+    ghost.style.width = rect.width + 'px';
+    card.classList.add('dragging');
+  }
+
+  function onTouchMove(e) {
+    e.preventDefault();
+    const t = e.touches[0];
+    if (ghost) {
+      ghost.style.left = (t.clientX - ghost.offsetWidth / 2) + 'px';
+      ghost.style.top  = (t.clientY - ghost.offsetHeight / 2) + 'px';
+    }
+  }
+
+  function onTouchEnd(e) {
+    if (!touchCard || !ghost) return;
+    const t = e.changedTouches[0];
+    ghost.style.display = 'none';
+    touchCard.classList.remove('dragging');
+
+    // Find drop target
+    ghost.style.display = 'none';
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    if (!el) { touchCard = null; return; }
+
+    const bank = el.closest('#bank');
+    const drop = el.closest('[id^="drop-"]');
+    let zone = null;
+    if (bank)  zone = 'bank';
+    else if (drop) zone = drop.id.replace('drop-', '');
+
+    if (zone) {
+      placements[touchCard.dataset.cardId] = zone;
+      renderAll();
+      hideFeedback();
+    }
+    touchCard = null;
+  }
+
+  /* ── Check answers ──────────────────────────────────────────────── */
+  function checkAnswers() {
+    let correct = 0, total = 0;
+    const lines = [];
+
+    ['application','transport','internet','link'].forEach(layer => {
+      const layerName = layer.charAt(0).toUpperCase() + layer.slice(1);
+      const inLayer = ALL_CARDS.filter(c => (placements[c.id] || 'bank') === layer);
+      const expected = ALL_CARDS.filter(c => c.answer === layer);
+
+      lines.push(`<strong style="font-size:0.95rem">${layerName} layer</strong>`);
+
+      expected.forEach(card => {
+        total++;
+        const placed = (placements[card.id] || 'bank') === layer;
+        if (placed) {
+          correct++;
+          lines.push(`  <span class="correct">✓ "${card.text}" — correct</span>`);
+        } else {
+          const where = placements[card.id] || 'bank';
+          lines.push(`  <span class="incorrect">✗ "${card.text}" — should be here (currently in: ${where})</span>`);
+        }
+      });
+
+      // False positives
+      inLayer.filter(c => c.answer !== layer).forEach(card => {
+        lines.push(`  <span class="incorrect">✗ "${card.text}" — does not belong here (belongs in: ${card.answer})</span>`);
+      });
+
+      lines.push('');
+    });
+
+    const unplaced = ALL_CARDS.filter(c => !placements[c.id] || placements[c.id] === 'bank').length;
+
+    const panel = document.getElementById('feedback-panel');
+    const body  = document.getElementById('feedback-body');
+    body.innerHTML = `
+      <div class="score-badge">${correct} / ${total} correct</div>
+      ${unplaced > 0 ? `<p style="margin-bottom:10px;color:#a05c00">⚠ ${unplaced} card(s) still in the bank.</p>` : ''}
+      <pre style="white-space:pre-wrap;font-family:'Source Serif 4',serif;font-size:0.83rem;line-height:1.8">${lines.join('\n')}</pre>
+    `;
+    panel.classList.add('visible');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function hideFeedback() {
+    document.getElementById('feedback-panel').classList.remove('visible');
+  }
+
+  /* ── Reset ──────────────────────────────────────────────────────── */
+  function resetCards() {
+    placements = {};
+    renderAll();
+    hideFeedback();
+  }
+
+  /* ── Init ────────────────────────────────────────────────────────── */
+  // Shuffle card order on load
+  (function init() {
+    const shuffled = shuffle(ALL_CARDS);
+    // Re-order by reference (placements are by id so order doesn't matter for logic,
+    // but we want visual shuffle in the bank)
+    ALL_CARDS.sort((a, b) => shuffled.indexOf(a) - shuffled.indexOf(b));
+    renderAll();
+  })();
+</script>
+</body>
+</html>
